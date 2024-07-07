@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Boolean, TIMESTAMP, TextClause, ForeignKey, text
+import enum
+from sqlalchemy import Column, Enum, Integer, String, Boolean, TIMESTAMP, TextClause, ForeignKey, text
 from .database import Base
 from sqlalchemy.orm import relationship
 
@@ -58,6 +59,58 @@ class Coins(Base):
     coin_type = Column(Integer, nullable=False, server_default= TextClause("1"))
     multiplication_factor = Column(Integer, nullable=False, server_default = TextClause("1"))
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=TextClause("Now()"))
+
+
+class BidColorOptions(enum.Enum):
+    red = 'red'
+    green = 'green'
+    violet = 'violet'
+    green_violet = 'green_violet'
+    red_violet = 'red_violet'
+    
+# class BidNumberOptions(enum.Enum):
+#     zero = 0
+#     one = 1
+#     two = 2
+#     three = 3
+#     four = 4
+#     five = 5
+#     six = 6
+#     seven = 7
+#     eight = 8
+#     nine = 9
+
+class BidSizeOptions(enum.Enum):
+    big = 'big'
+    small = 'small'
+
+class GameLogs(Base):
+    __tablename__ = "game_logs"
+    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    # 1 -> 30 sec
+    # 2 -> 1 min
+    # 3 -> 3 min
+    # 4 -> 5 min
+    game_type = Column(Integer, index=True, nullable=False)
+    result_number = Column(Integer, nullable=True, index = True)
+    result_color = Column(Enum(BidColorOptions), nullable=True, index=True)
+    result_size = Column(Enum(BidSizeOptions), nullable=True, index=True)
+    is_finished = Column(Boolean, nullable = False, server_default = TextClause("False"))
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=TextClause("Now()"))
+
+class UserBids(Base):
+    __tablename__ = "user_bids"
+    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    game_coin_price = Column(Integer, nullable = False, server_default = TextClause("10"))
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    game_id = Column(Integer, ForeignKey('game_logs.id', ondelete="CASCADE"), nullable=False)
+    bid_number = Column(Integer, nullable=True, index=True)
+    bid_color = Column(Enum(BidColorOptions), nullable=True, index=True)
+    bid_size = Column(Enum(BidSizeOptions), nullable=True, index=True)
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=TextClause("Now()"))
+    
+
+
 
 
 

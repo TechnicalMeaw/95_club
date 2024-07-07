@@ -2,6 +2,7 @@ from typing import List
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
 from typing import Optional
+from . import models
 
 # Create User Request Model
 class UserCreate(BaseModel):
@@ -318,7 +319,7 @@ class LotteryNoticeRequestResponseModel(BaseModel):
 class JhandiMundaTiming(BaseModel):
 
     is_jhandi_munda_slot_open : bool
-    remaining_time_in_millis : int
+    remaining_time_in_millis : float
 
 
 class JhandiMundaBidRequestModel(BaseModel):
@@ -343,3 +344,11 @@ class JhandiMundaMyBidsResponseModel(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class GamePlayBidRequestModel(BaseModel):
+    game_id : int
+    bid_number : Optional[int]
+    bid_color : Optional[models.BidColorOptions]
+    bid_size : Optional[models.BidSizeOptions]
+    bid_amount : int
