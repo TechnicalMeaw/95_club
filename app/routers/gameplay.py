@@ -2,9 +2,9 @@ from fastapi import status, HTTPException, Depends, APIRouter
 from .. import models, schemas, oauth2
 from ..database import get_db
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, delete, func, select
+from sqlalchemy import String, and_, cast, delete, func, select
 from .coins import update_coin
-from typing import List
+from typing import List, Optional
 from datetime import datetime, timedelta
 import random
 
@@ -326,8 +326,16 @@ async def bid(body : schemas.GamePlayBidRequestModel, db: Session = Depends(get_
 
     db.commit()
     
-    return {"detail": "Successfully placed bid"}
-    
+    return {"status": "success", "statusCode": 200, "message" : "Successfully placed bid"}
+
+
+@router.get('/get_game_history', response_model=schemas.GameHistoryResponseModel)
+async def get_game_history(game_type: int = 1, page: int = 1, search: Optional[str] = "", db: Session = Depends(get_db)):
+    if game_type < 1 or game_type > 4:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid game type")
+
+    game_history = db.query(models.GameLogs).filter(models.GameLogs.game_type == game_type, models.GameLogs.is_finished == True).filter(cast(models.GameLogs.id, String).contains(search)).order_by(models.GameLogs.created_at.desc()).limit(10).offset((page-1)*10).all()
+    return {"status": "success", "statusCode": 200, "message" : "Successfully got game history", "data" : game_history}
 
 @router.get('/error_correction_and_calculate')
 async def error_correction_and_calculate(db: Session = Depends(get_db)):

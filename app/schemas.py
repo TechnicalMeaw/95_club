@@ -346,9 +346,34 @@ class JhandiMundaMyBidsResponseModel(BaseModel):
         from_attributes = True
 
 
+
+# Common
+# ---------
+# Response model
+class CommonResponseModel(BaseModel):
+    status : str
+    statusCode : int
+    message : str 
+
+
+# Game Play
+# ---------------------------------------------------------
 class GamePlayBidRequestModel(BaseModel):
     game_id : int
     bid_number : Optional[int]
     bid_color : Optional[models.BidColorOptions]
     bid_size : Optional[models.BidSizeOptions]
     bid_amount : int
+
+# Game History
+class GameHistory(BaseModel):
+    id : int
+    result_number : int
+    result_color : str
+    result_size : str
+    created_at : datetime
+    class Config:
+        from_attributes = True
+
+class GameHistoryResponseModel(CommonResponseModel):
+    data : List[GameHistory]
