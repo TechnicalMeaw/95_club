@@ -110,6 +110,13 @@ class UserBids(Base):
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=TextClause("Now()"))
     
 
+class UserGameLogs(Base):
+    __tablename__ = "user_game_logs"
+    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    game_id = Column(Integer, ForeignKey('game_logs.id', ondelete="CASCADE"), nullable=False)
+    win_coin_value = Column(Integer, nullable = True)
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=TextClause("Now()"))
 
 
 

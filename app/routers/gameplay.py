@@ -2,10 +2,10 @@ from fastapi import status, HTTPException, Depends, APIRouter
 from .. import models, schemas, oauth2
 from ..database import get_db
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import and_, delete, func, select
 from .coins import update_coin
 from typing import List
-from datetime import datetime
+from datetime import datetime, timedelta
 import random
 
 
@@ -172,6 +172,16 @@ async def get_result(game_id : int, db: Session = Depends(get_db), current_user 
 
         user_reward = (user_result_number_bid_coins * 9) + (user_result_color_bid_coins * 2) + (user_result_size_bid_coins * 2)
 
+        coin_balance = db.query(models.Coins).filter(current_user.id == models.Coins.user_id).first()
+        coin_balance.num_of_coins = coin_balance.num_of_coins + user_reward
+
+        # Save in user game history
+        existing_user_game_log = db.query(models.UserGameLogs).filter(models.UserGameLogs.game_id == game.id, models.UserGameLogs.user_id == current_user.id).first()
+        if existing_user_game_log:
+            existing_user_game_log.win_coin_value = user_reward
+
+        db.commit()
+
         return {"result_number" : game.result_number,
                 "result_color" : game.result_color,
                 "result_size" : game.result_size,
@@ -211,7 +221,7 @@ async def get_result(game_id : int, db: Session = Depends(get_db), current_user 
     game.result_color = result_color
     game.result_size = result_size
     game.is_finished = True
-    db.commit()
+    # db.commit()
 
     user_coin_bids_query = all_bids_coins_query.filter(models.UserBids.user_id == current_user.id)
 
@@ -220,6 +230,16 @@ async def get_result(game_id : int, db: Session = Depends(get_db), current_user 
     user_result_size_bid_coins = user_coin_bids_query.filter(models.UserBids.bid_size == result_size).scalar() or 0
 
     user_reward = (user_result_number_bid_coins * 9) + (user_result_color_bid_coins * 2) + (user_result_size_bid_coins * 2)
+
+    coin_balance = db.query(models.Coins).filter(current_user.id == models.Coins.user_id).first()
+    coin_balance.num_of_coins = coin_balance.num_of_coins + user_reward
+
+    # Save in user game history
+    existing_user_game_log = db.query(models.UserGameLogs).filter(models.UserGameLogs.game_id == game.id, models.UserGameLogs.user_id == current_user.id).first()
+    if existing_user_game_log:
+        existing_user_game_log.win_coin_value = user_reward
+
+    db.commit()
 
     return {"result_number" : result_number,
             "result_color" : result_color,
@@ -235,8 +255,35 @@ async def bid(body : schemas.GamePlayBidRequestModel, db: Session = Depends(get_
     if not game:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Invalid game id')
     
-    # if not body.bid_number and not body.bid_color and not body.bid_size:
-    #     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid bid request")
+        # Bidding time validation
+    # ------------------------
+    game_bid_time_in_seconds = 0
+    # If 30 sec game
+    if game.game_type == 1:
+        game_bid_time_in_seconds = 20
+    # 1 min game
+    elif game.game_type == 2:
+        game_bid_time_in_seconds = 50
+    # 3 min game
+    elif game.game_type == 3:
+        game_bid_time_in_seconds = 170
+    # 5 min game
+    else:
+        game_bid_time_in_seconds = 290
+
+    game_naive = game.created_at.replace(tzinfo=None)
+    game_elapsed_time = datetime.now() - game_naive
+
+    if game_elapsed_time.total_seconds() > game_bid_time_in_seconds:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Bidding is not allowed in last 10 seconds")
+
+    coin_balance = db.query(models.Coins).filter(current_user.id == models.Coins.user_id).first()
+
+    if not coin_balance:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Coin balance is not enough")
+    
+    if int(coin_balance.num_of_coins) < body.bid_amount:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Coin balance is not enough")
     
     if body.bid_amount < 10:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Bid ammount can't be less than 10")
@@ -250,7 +297,6 @@ async def bid(body : schemas.GamePlayBidRequestModel, db: Session = Depends(get_
         
         new_bid = models.UserBids(user_id = current_user.id, game_id = game.id, bid_number = body.bid_number, game_coin_price = body.bid_amount)
         db.add(new_bid)
-        db.commit()
 
     elif body.bid_color:
         if body.bid_number or body.bid_size:
@@ -258,7 +304,6 @@ async def bid(body : schemas.GamePlayBidRequestModel, db: Session = Depends(get_
     
         new_bid = models.UserBids(user_id = current_user.id, game_id = game.id, bid_color = body.bid_color, game_coin_price = body.bid_amount)
         db.add(new_bid)
-        db.commit()
 
     elif body.bid_size:
         if body.bid_number or body.bid_color:
@@ -266,10 +311,72 @@ async def bid(body : schemas.GamePlayBidRequestModel, db: Session = Depends(get_
     
         new_bid = models.UserBids(user_id = current_user.id, game_id = game.id, bid_size = body.bid_size, game_coin_price = body.bid_amount)
         db.add(new_bid)
-        db.commit()
-
     else:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid bid request")
     
+    # Deduct amount
+    coin_balance.num_of_coins = coin_balance.num_of_coins - body.bid_amount
+
+    # Save in user game history
+    existing_user_game_log = db.query(models.UserGameLogs).filter(models.UserGameLogs.game_id == game.id, models.UserGameLogs.user_id == current_user.id).first()
+
+    if not existing_user_game_log:
+        new_log = models.UserGameLogs(user_id = current_user.id, game_id = game.id)
+        db.add(new_log)
+
+    db.commit()
+    
     return {"detail": "Successfully placed bid"}
     
+
+@router.get('/error_correction_and_calculate')
+async def error_correction_and_calculate(db: Session = Depends(get_db)):
+
+    # Delete game logs older than 24 hrs
+    # with no bids on them
+    # ----------------------------------
+
+    # Calculate the timestamp for 24 hours ago
+    time_threshold = datetime.now() - timedelta(hours=24)
+
+    # Subquery to get all game_ids in UserBids
+    subquery = select(models.UserBids.game_id).distinct()
+
+    # Delete GameLogs where game_id is not in the subquery
+    delete_query = delete(models.GameLogs).where(
+        and_(
+            models.GameLogs.id.not_in(subquery),
+            models.GameLogs.created_at < time_threshold
+        )
+    )
+
+    # Execute the delete query
+    db.execute(delete_query)
+
+    all_unfinished_user_games = db.query(models.UserGameLogs).join(models.GameLogs).where(models.UserGameLogs.game_id == models.GameLogs.id)\
+        .filter(models.GameLogs.is_finished == True, models.UserGameLogs.win_coin_value == None).all()
+    
+    for user_game_log in all_unfinished_user_games:
+        # Get game log
+        game = db.query(models.GameLogs).filter(models.GameLogs.id == user_game_log.game_id).first()
+        if game:
+            # Query to filter bids by game_id
+            all_bids_coins_query = db.query(func.sum(models.UserBids.game_coin_price)).filter(models.UserBids.game_id == game.id)
+        
+            user_coin_bids_query = all_bids_coins_query.filter(models.UserBids.user_id == user_game_log.user_id)
+
+            user_result_number_bid_coins = user_coin_bids_query.filter(models.UserBids.bid_number == game.result_number).scalar() or 0
+            user_result_color_bid_coins = user_coin_bids_query.filter(models.UserBids.bid_color == game.result_color).scalar() or 0
+            user_result_size_bid_coins = user_coin_bids_query.filter(models.UserBids.bid_size == game.result_size).scalar() or 0
+
+            user_reward = (user_result_number_bid_coins * 9) + (user_result_color_bid_coins * 2) + (user_result_size_bid_coins * 2)
+
+            coin_balance = db.query(models.Coins).filter(user_game_log.user_id == models.Coins.user_id).first()
+            coin_balance.num_of_coins = coin_balance.num_of_coins + user_reward
+
+            # Save in user game history
+            user_game_log.win_coin_value = user_reward
+
+            db.commit()
+
+    return {"status": "success", "statusCode": 200, "message" : "Successfully executed"}
