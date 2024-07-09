@@ -355,6 +355,13 @@ class CommonResponseModel(BaseModel):
     statusCode : int
     message : str 
 
+class PaginationResponseModel(BaseModel):
+    total_count: int
+    current_page : int
+    total_page : int
+    prev_page : int | None
+    next_page: int | None
+
 
 # Game Play
 # ---------------------------------------------------------
@@ -375,5 +382,18 @@ class GameHistory(BaseModel):
     class Config:
         from_attributes = True
 
-class GameHistoryResponseModel(CommonResponseModel):
+class GameHistoryResponseModel(CommonResponseModel, PaginationResponseModel):
     data : List[GameHistory]
+
+
+class MyGameHistory(BaseModel):
+    # id: int
+    # user_id : int
+    game_id: int
+    win_coin_value : int
+    created_at: datetime
+    game : GameHistory
+    class Config:
+        from_attributes = True
+class MyGameHistoryResponseModel(CommonResponseModel, PaginationResponseModel):
+    data: List[MyGameHistory]

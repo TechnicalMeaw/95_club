@@ -1,3 +1,4 @@
+import math
 from fastapi import status, HTTPException, Depends, APIRouter
 from .. import models, schemas, oauth2
 from ..database import get_db
@@ -334,8 +335,50 @@ async def get_game_history(game_type: int = 1, page: int = 1, search: Optional[s
     if game_type < 1 or game_type > 4:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid game type")
 
-    game_history = db.query(models.GameLogs).filter(models.GameLogs.game_type == game_type, models.GameLogs.is_finished == True).filter(cast(models.GameLogs.id, String).contains(search)).order_by(models.GameLogs.created_at.desc()).limit(10).offset((page-1)*10).all()
-    return {"status": "success", "statusCode": 200, "message" : "Successfully got game history", "data" : game_history}
+    game_history_query = db.query(models.GameLogs).filter(models.GameLogs.game_type == game_type, models.GameLogs.is_finished == True)\
+        .filter(cast(models.GameLogs.id, String)
+                .contains(search)).order_by(models.GameLogs.created_at.desc())
+    
+    total_count = game_history_query.count()
+    total_page = math.ceil(total_count/10)
+    game_history_data = game_history_query.limit(10).offset((page-1)*10).all()
+    
+    
+    return {"status": "success", "statusCode": 200, "message" : "Successfully got game history",
+            "total_count": total_count,
+            "current_page": page,
+            "total_page": total_page,
+            "prev_page": page-1 if page > 1 else None, 
+            "next_page": page+1 if page < total_page else None,
+            "data" : game_history_data}
+
+
+@router.get('/get_my_game_history', response_model=schemas.MyGameHistoryResponseModel)
+async def get_game_history(game_type: int = 1, page: int = 1, search: Optional[str] = "", db: Session = Depends(get_db), current_user : models.User = Depends(oauth2.get_current_user)):
+    if game_type < 1 or game_type > 4:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid game type")
+
+    history_query = db.query(models.UserGameLogs).join(models.GameLogs).where(models.UserGameLogs.game_id == models.GameLogs.id).filter(
+        models.UserGameLogs.user_id == current_user.id
+        ).filter(
+            models.GameLogs.game_type == game_type, models.GameLogs.is_finished == True
+        ).filter(
+            cast(models.GameLogs.id, String).contains(search)
+            ).order_by(models.UserGameLogs.created_at.desc())
+    
+    total_count = history_query.count()
+    total_page = math.ceil(total_count/10)
+    history_data = history_query.limit(10).offset((page-1)*10).all()
+
+    return {"status": "success", "statusCode": 200, "message" : "Successfully got my game history", 
+            "total_count": total_count,
+            "current_page": page,
+            "total_page": total_page,
+            "prev_page": page-1 if page > 1 else None, 
+            "next_page": page+1 if page < total_page else None,
+            "data" : history_data}
+
+
 
 @router.get('/error_correction_and_calculate')
 async def error_correction_and_calculate(db: Session = Depends(get_db)):

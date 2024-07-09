@@ -118,6 +118,7 @@ class UserGameLogs(Base):
     win_coin_value = Column(Integer, nullable = True)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=TextClause("Now()"))
 
+    game = relationship('GameLogs')
 
 
 

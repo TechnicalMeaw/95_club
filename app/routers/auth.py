@@ -23,7 +23,7 @@ def login(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session =
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="First verify your phone number")
     
     # create a token
-    access_token = oauth2.create_access_token(data={"user_id": user.id})
+    access_token = oauth2.create_access_token(data=user.id)
     return {"token": access_token, "existing_user" : True, "login_flow_completed": True}
 
 
