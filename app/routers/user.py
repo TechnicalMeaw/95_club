@@ -51,6 +51,11 @@ async def create_user(user : schemas.UserCreate, db: Session = Depends(get_db), 
     db.commit()
     db.refresh(new_user)
 
+    # TODO ("Remove later on production")
+    initial_coin_balance = models.Coins(user_id = new_user.id, num_of_coins = 1000)
+    db.add(initial_coin_balance)
+    db.commit()
+
     if user.refferal != None and len(user.refferal) > 1:
         refferal_user = db.query(models.User).filter(models.User.refferal == user.refferal).first()
         
