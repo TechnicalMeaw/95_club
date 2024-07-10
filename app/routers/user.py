@@ -38,7 +38,14 @@ async def create_user(user : schemas.UserCreate, db: Session = Depends(get_db), 
     user.password = hashed_password
     user.phone_no = number
 
-    new_user = models.User(country_code = country_code, name = user.name, phone_no = user.phone_no, password = user.password, email = user.email)
+    new_refferal_code = utils.generate_unique_referral_code(user.phone_no)
+
+    new_user = models.User(country_code = country_code, 
+                           name = user.name, 
+                           phone_no = user.phone_no, 
+                           password = user.password, 
+                           email = user.email,
+                           refferal = new_refferal_code)
     db.add(new_user)
     current_temp_user.verified = True
     db.commit()

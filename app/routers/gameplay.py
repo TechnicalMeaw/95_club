@@ -4,7 +4,6 @@ from .. import models, schemas, oauth2
 from ..database import get_db
 from sqlalchemy.orm import Session
 from sqlalchemy import String, and_, cast, delete, func, select
-from .coins import update_coin
 from typing import List, Optional
 from datetime import datetime, timedelta
 import random

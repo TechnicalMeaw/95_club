@@ -4,7 +4,7 @@ from .. import models, schemas, oauth2, horse_util
 from ..database import get_db
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from .coins import update_coin
+# from .coins import update_coin
 from typing import List
 
 router = APIRouter(

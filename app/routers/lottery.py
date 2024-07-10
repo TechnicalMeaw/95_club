@@ -1,7 +1,7 @@
 from typing import Optional, List
 from fastapi import status, HTTPException, Depends, APIRouter
 
-from app.routers.coins import update_coin
+# from app.routers.coins import update_coin
 from .. import models, schemas, utils, oauth2
 from ..database import get_db
 from sqlalchemy.orm import Session

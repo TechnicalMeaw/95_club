@@ -16,7 +16,7 @@ class User(Base):
     is_verified = Column(Boolean, nullable = False, server_default = TextClause("True"))
     role = Column(Integer, server_default = TextClause("1"))
     country_code = Column(String)
-    refferal = Column(String, nullable = False, server_default=TextClause("gen_random_uuid()"))
+    refferal = Column(String, nullable = False, server_default=TextClause("gen_random_uuid()"), unique=True)
     last_login = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text("Now()"))
     is_deleted = Column(Boolean, nullable = False, server_default = text("False"))
 

@@ -1,3 +1,6 @@
+import base64
+import hashlib
+import uuid
 from passlib.context import CryptContext
 from datetime import datetime
 from sqlalchemy.orm import Session
@@ -114,3 +117,22 @@ def is_email(email):
 def is_phone_number(phone_number):
     pattern = r'^\+?[0-9]+(?:\s*-?\s*[0-9]+)*$'
     return re.match(pattern, phone_number) is not None
+
+
+def generate_unique_referral_code(unique_attribute: str):
+    # Generate a UUID
+    uuid_str = str(uuid.uuid4())
+    
+    # Combine UUID with a unique attribute of the user
+    combined_str = uuid_str + unique_attribute
+    
+    # Hash the combination using SHA-256
+    hash_object = hashlib.sha256(combined_str.encode())
+    
+    # Encode the hash in base64
+    base64_str = base64.urlsafe_b64encode(hash_object.digest()).decode('utf-8').rstrip('=')
+    
+    # Truncate to 8 characters
+    referral_code = base64_str[:8]
+    
+    return referral_code[0:7:] + referral_code[7::].replace('-', '0')
