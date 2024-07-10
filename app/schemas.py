@@ -367,9 +367,9 @@ class PaginationResponseModel(BaseModel):
 # ---------------------------------------------------------
 class GamePlayBidRequestModel(BaseModel):
     game_id : int
-    bid_number : Optional[int]
-    bid_color : Optional[models.BidColorOptions]
-    bid_size : Optional[models.BidSizeOptions]
+    bid_number : Optional[int] = None
+    bid_color : Optional[models.BidColorOptions] = None
+    bid_size : Optional[models.BidSizeOptions] = None
     bid_amount : int
 
 # Game History
