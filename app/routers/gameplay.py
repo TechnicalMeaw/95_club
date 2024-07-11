@@ -403,6 +403,8 @@ async def error_correction_and_calculate(db: Session = Depends(get_db)):
     # Execute the delete query
     db.execute(delete_query)
 
+    db.commit()
+
     all_unfinished_user_games = db.query(models.UserGameLogs).join(models.GameLogs).where(models.UserGameLogs.game_id == models.GameLogs.id)\
         .filter(models.GameLogs.is_finished == True, models.UserGameLogs.win_coin_value == None).all()
     
