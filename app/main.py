@@ -13,7 +13,7 @@ app.include_router(auth.router)
 app.include_router(gameplay.router)
 
 app.include_router(coins.router)
-# app.include_router(transactions.router)
+app.include_router(transactions.router)
 # app.include_router(lucky_draw.router)
 # app.include_router(lottery.router)
 # app.include_router(withdraw.router)

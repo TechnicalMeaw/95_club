@@ -96,14 +96,14 @@ async def create_user(user : schemas.UserCreate, db: Session = Depends(get_db), 
 #     return all_users
 
 
-# @router.get("/", response_model= schemas.UserOutWithRefferal)
-# def get_current_user(db: Session = Depends(get_db), current_user : models.User = Depends(oauth2.get_current_user)):
-#     user = db.query(models.User).filter(models.User.id == current_user.id).first()
+@router.get("/", response_model= schemas.UserOutWithRefferal)
+def get_current_user(db: Session = Depends(get_db), current_user : models.User = Depends(oauth2.get_current_user)):
+    user = db.query(models.User).filter(models.User.id == current_user.id).first()
 
-#     if not user:
-#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail= "User does not exist")
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail= "User does not exist")
     
-#     return user
+    return user
 
 
 # @router.get("/{id}", response_model= schemas.UserOut)

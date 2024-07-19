@@ -17,6 +17,7 @@ class UserOut(BaseModel):
     id: int
     name: str
     phone_no: str
+    email : str | None
     created_at : datetime
 
     class Config:
@@ -93,14 +94,13 @@ class CoinResponse(BaseModel):
 class TransactionRequest(BaseModel):
     amount : int
     transction_id : str
-    isAdded : bool
     transaction_medium : str
     screenshot_url : str
 
 # For transaction verification request --- Admin Panel
 class VerifyTransactionRequest(BaseModel):
     user_id : int
-    transaction_id : str
+    # transaction_id : str
     in_app_transaction_id : int
     is_verified : bool
 
@@ -112,8 +112,9 @@ class IndividualTransactionResponse(BaseModel):
     transction_id : str
     isAdded : bool
     transaction_medium : str
+    receiver_details : str
     is_verified : bool
-    is_rejected_by_admin : bool
+    is_rejected : bool
     screenshot_url : str
     created_at : datetime
 
@@ -397,3 +398,17 @@ class MyGameHistory(BaseModel):
         from_attributes = True
 class MyGameHistoryResponseModel(CommonResponseModel, PaginationResponseModel):
     data: List[MyGameHistory]
+
+
+# Transactions
+class AllTransactionsResponseModel(CommonResponseModel, PaginationResponseModel):
+    data : List[Transaction]
+
+
+# Withdraw
+class WithdrawRequestModel(BaseModel):
+    amount : int
+    account_number : Optional[str]
+    ifsc_code: Optional[str]
+    account_holder_name : Optional[str]
+    upi_id: Optional[str]

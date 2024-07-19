@@ -122,20 +122,21 @@ class UserGameLogs(Base):
 
 
 
-# class Transactions(Base):
-#     __tablename__ = "transactions"
-#     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
-#     amount = Column(Integer, nullable=False)
-#     user_id = Column(Integer, ForeignKey("users.id"), nullable = False)
-#     transction_id = Column(String, nullable=False, unique=True)
-#     isAdded = Column(Boolean, nullable  = False, server_default = TextClause("True"))
-#     transaction_medium = Column(String)
-#     is_verified = Column(Boolean, nullable = False, server_default=TextClause("False"))
-#     is_rejected_by_admin = Column(Boolean, nullable = False, server_default = TextClause("False"))
-#     screenshot_url = Column(String)
-#     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=TextClause("Now()"))
+class Transactions(Base):
+    __tablename__ = "transactions"
+    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    amount = Column(Integer, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable = False)
+    transction_id = Column(String, nullable=False, unique=True)
+    is_added = Column(Boolean, nullable  = False, server_default = TextClause("True"))
+    transaction_medium = Column(String)
+    receiver_details = Column(String)
+    screenshot_url = Column(String)
+    is_verified = Column(Boolean, nullable = False, server_default=TextClause("False"))
+    is_rejected = Column(Boolean, nullable = False, server_default = TextClause("False"))
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=TextClause("Now()"))
 
-#     user = relationship("User")
+    user = relationship("User")
 
 
 
