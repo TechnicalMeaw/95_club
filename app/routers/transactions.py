@@ -11,7 +11,7 @@ router = APIRouter(
 )
 
 @router.post("/deposit_request", status_code=status.HTTP_201_CREATED, response_model=schemas.HTTPError)
-def transact(transaction_data : schemas.TransactionRequest, db: Session = Depends(get_db), current_user : models.User = Depends(oauth2.get_current_user)):
+def deposit(transaction_data : schemas.TransactionRequest, db: Session = Depends(get_db), current_user : models.User = Depends(oauth2.get_current_user)):
     prev_transaction_on_same_id = db.query(models.Transactions).filter(models.Transactions.transction_id == transaction_data.transction_id).first()
 
     if prev_transaction_on_same_id:
@@ -25,7 +25,7 @@ def transact(transaction_data : schemas.TransactionRequest, db: Session = Depend
 
 
 @router.post("/withdraw_request", status_code=status.HTTP_201_CREATED, response_model=schemas.HTTPError)
-def transact(withdraw_data : schemas.WithdrawRequestModel, db: Session = Depends(get_db), current_user : models.User = Depends(oauth2.get_current_user)):
+def withdraw(withdraw_data : schemas.WithdrawRequestModel, db: Session = Depends(get_db), current_user : models.User = Depends(oauth2.get_current_user)):
 
     coin_balance = db.query(models.Coins).filter(current_user.id == models.Coins.user_id).first()
 
