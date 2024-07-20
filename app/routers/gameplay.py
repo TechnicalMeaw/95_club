@@ -77,7 +77,7 @@ def get_game_result(all_bids_coins_query) -> int:
 def get_result_color_and_size(result_number):
     if result_number == 0:
         return models.BidColorOptions.violet, models.BidSizeOptions.small
-    elif result_number == 1:
+    elif result_number == 5:
         return models.BidColorOptions.violet, models.BidSizeOptions.big
     elif result_number in [1, 3]:
         return models.BidColorOptions.green, models.BidSizeOptions.small
