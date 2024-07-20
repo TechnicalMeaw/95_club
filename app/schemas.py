@@ -391,7 +391,7 @@ class MyGameHistory(BaseModel):
     # id: int
     # user_id : int
     game_id: int
-    win_coin_value : int
+    win_coin_value : int | None
     created_at: datetime
     game : GameHistory
     class Config:
