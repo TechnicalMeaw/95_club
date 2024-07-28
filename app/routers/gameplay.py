@@ -186,7 +186,8 @@ async def get_result(game_id : int, db: Session = Depends(get_db), current_user 
                 "result_color" : game.result_color,
                 "result_size" : game.result_size,
                 "total_bid": user_coin_bids_query.scalar() or 0, 
-                "win_coins" : user_reward}
+                "win_coins" : user_reward,
+                "game_id": game.id}
 
 
     # Bidding time validation
@@ -245,7 +246,8 @@ async def get_result(game_id : int, db: Session = Depends(get_db), current_user 
             "result_color" : result_color,
             "result_size" : result_size,
             "total_bid": user_coin_bids_query.scalar() or 0, 
-            "win_coins" : user_reward}
+            "win_coins" : user_reward,
+            "game_id": game.id}
 
 
 @router.post('/bid')
