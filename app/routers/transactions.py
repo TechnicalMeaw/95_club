@@ -35,7 +35,7 @@ def withdraw(withdraw_data : schemas.WithdrawRequestModel, db: Session = Depends
     if int(coin_balance.num_of_coins) < withdraw_data.amount:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Coin Balance is not enough")
     
-    if not withdraw_data.upi_id or not withdraw_data.account_number and not withdraw_data.ifsc_code and not withdraw_data.account_holder_name:
+    if not withdraw_data.upi_id and not withdraw_data.account_number and not withdraw_data.ifsc_code and not withdraw_data.account_holder_name:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid withdraw details")
     
     if withdraw_data.upi_id and not withdraw_data.account_number and not withdraw_data.ifsc_code and not withdraw_data.account_holder_name:
