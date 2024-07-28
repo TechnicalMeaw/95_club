@@ -21,7 +21,7 @@ def deposit(transaction_data : schemas.TransactionRequest, db: Session = Depends
     db.add(new_transaction)
     db.commit()
 
-    return {"detail": "Transaction added, need to be verified"}
+    return {"status": "success", "statusCode": 200, "message" : "Transaction added, need to be verified"}
 
 
 @router.post("/withdraw_request", status_code=status.HTTP_201_CREATED, response_model=schemas.HTTPError)
@@ -50,7 +50,7 @@ def withdraw(withdraw_data : schemas.WithdrawRequestModel, db: Session = Depends
         # Deduct coin balance
         coin_balance.num_of_coins -= withdraw_data.amount  
         db.commit()
-        return {"detail": "Withdraw request with UPI transfer added, please wait until processed"}
+        return {"status": "success", "statusCode": 200, "message" : "Withdraw request with UPI transfer added, please wait until processed"}
     
     elif withdraw_data.account_number and withdraw_data.ifsc_code and withdraw_data.account_holder_name and not withdraw_data.upi_id:
         # Bank transaction request
@@ -64,7 +64,7 @@ def withdraw(withdraw_data : schemas.WithdrawRequestModel, db: Session = Depends
         # Deduct coin balance
         coin_balance.num_of_coins -= withdraw_data.amount  
         db.commit()
-        return {"detail": "Withdraw request with bank transfer added, please wait until processed"}
+        return {"status": "success", "statusCode": 200, "message" : "Withdraw request with bank transfer added, please wait until processed"}
     else:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid withdraw details")
 
