@@ -10,7 +10,7 @@ router = APIRouter(
     tags=["Transaction"]
 )
 
-@router.post("/deposit_request", status_code=status.HTTP_201_CREATED, response_model=schemas.HTTPError)
+@router.post("/deposit_request", status_code=status.HTTP_201_CREATED, response_model=schemas.CommonResponseModel)
 def deposit(transaction_data : schemas.TransactionRequest, db: Session = Depends(get_db), current_user : models.User = Depends(oauth2.get_current_user)):
     prev_transaction_on_same_id = db.query(models.Transactions).filter(models.Transactions.transction_id == transaction_data.transction_id).first()
 
@@ -24,7 +24,7 @@ def deposit(transaction_data : schemas.TransactionRequest, db: Session = Depends
     return {"status": "success", "statusCode": 200, "message" : "Transaction added, need to be verified"}
 
 
-@router.post("/withdraw_request", status_code=status.HTTP_201_CREATED, response_model=schemas.HTTPError)
+@router.post("/withdraw_request", status_code=status.HTTP_201_CREATED, response_model=schemas.CommonResponseModel)
 def withdraw(withdraw_data : schemas.WithdrawRequestModel, db: Session = Depends(get_db), current_user : models.User = Depends(oauth2.get_current_user)):
 
     coin_balance = db.query(models.Coins).filter(current_user.id == models.Coins.user_id).first()
