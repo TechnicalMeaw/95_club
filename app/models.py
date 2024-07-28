@@ -127,7 +127,7 @@ class Transactions(Base):
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     amount = Column(Integer, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable = False)
-    transction_id = Column(String, nullable=False, unique=True)
+    transction_id = Column(String, nullable=True, unique=True)
     is_added = Column(Boolean, nullable  = False, server_default = TextClause("True"))
     transaction_medium = Column(String)
     receiver_details = Column(String)
