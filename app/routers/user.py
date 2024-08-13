@@ -115,3 +115,14 @@ def get_current_user(db: Session = Depends(get_db), current_user : models.User =
     
 #     return user
 
+
+
+
+@router.post("/submit_feedback", response_model= schemas.CommonResponseModel)
+def submit_feedback(request_data : schemas.FeedbackRequestModel, db: Session = Depends(get_db), current_user : models.User = Depends(oauth2.get_current_user)):
+
+    new_feedback = models.Feedback(user_id = current_user.id, mobile_number = request_data.mobile_number, concern = request_data.concern)
+
+    db.add(new_feedback)
+    db.commit()
+    return {"status": "success", "statusCode": 201, "message" : "Concern captured"}

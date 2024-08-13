@@ -139,6 +139,15 @@ class Transactions(Base):
     user = relationship("User")
 
 
+    
+class Feedback(Base):
+    __tablename__ = "feedback"
+    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable = False)
+    mobile_number = Column(String, nullable=False)
+    concern = Column(String, nullable=False)
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=TextClause("Now()"))
+
 
 # class OTPs(Base):
 #     __tablename__ = "otps"

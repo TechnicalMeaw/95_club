@@ -419,3 +419,10 @@ class ResetPasswordRequestModel(BaseModel):
     otp: int
     phone_number: str
     new_password: str
+
+
+# Feedback
+class FeedbackRequestModel(BaseModel):
+    name : str
+    mobile_number : str
+    concern : str
