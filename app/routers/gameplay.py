@@ -173,7 +173,8 @@ async def get_result(game_id : int, db: Session = Depends(get_db), current_user 
         user_reward = (user_result_number_bid_coins * 9) + (user_result_color_bid_coins * 2) + (user_result_size_bid_coins * 2)
 
         coin_balance = db.query(models.Coins).filter(current_user.id == models.Coins.user_id).first()
-        coin_balance.num_of_coins = coin_balance.num_of_coins + user_reward
+        if coin_balance:
+            coin_balance.num_of_coins = coin_balance.num_of_coins + user_reward
 
         # Save in user game history
         existing_user_game_log = db.query(models.UserGameLogs).filter(models.UserGameLogs.game_id == game.id, models.UserGameLogs.user_id == current_user.id).first()
@@ -233,7 +234,8 @@ async def get_result(game_id : int, db: Session = Depends(get_db), current_user 
     user_reward = (user_result_number_bid_coins * 9) + (user_result_color_bid_coins * 2) + (user_result_size_bid_coins * 2)
 
     coin_balance = db.query(models.Coins).filter(current_user.id == models.Coins.user_id).first()
-    coin_balance.num_of_coins = coin_balance.num_of_coins + user_reward
+    if coin_balance:
+        coin_balance.num_of_coins = coin_balance.num_of_coins + user_reward
 
     # Save in user game history
     existing_user_game_log = db.query(models.UserGameLogs).filter(models.UserGameLogs.game_id == game.id, models.UserGameLogs.user_id == current_user.id).first()

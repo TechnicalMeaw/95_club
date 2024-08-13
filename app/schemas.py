@@ -109,13 +109,13 @@ class VerifyTransactionRequest(BaseModel):
 class IndividualTransactionResponse(BaseModel):
     id : int
     amount : int
-    transction_id : str
-    isAdded : bool
+    transction_id : str | None
+    is_added : bool
     transaction_medium : str
-    receiver_details : str
+    receiver_details : str | None
     is_verified : bool
     is_rejected : bool
-    screenshot_url : str
+    screenshot_url : str | None
     created_at : datetime
 
     class Config:
@@ -412,3 +412,10 @@ class WithdrawRequestModel(BaseModel):
     ifsc_code: Optional[str]
     account_holder_name : Optional[str]
     upi_id: Optional[str]
+
+
+# Reset password
+class ResetPasswordRequestModel(BaseModel):
+    otp: int
+    phone_number: str
+    new_password: str

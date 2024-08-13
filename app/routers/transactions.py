@@ -150,7 +150,7 @@ def get_all_transactions(page_no : int = 1, search_transaction_id: Optional[str]
     transactions_query = db.query(models.Transactions).filter(models.Transactions.user_id == current_user.id, models.Transactions.transction_id.contains(search_transaction_id)).order_by(0-models.Transactions.id)
 
     
-    total_count = transactions_query.count() 
+    total_count = transactions_query.count()
     total_page = math.ceil(total_count/10)
    
     transactions_data = transactions_query.limit(10).offset((page_no-1)*10).all()
