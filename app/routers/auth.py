@@ -145,8 +145,8 @@ def verify_otp(verify_request: schemas.VerifyOTPRequestModel, db: Session = Depe
 
 
 
-@router.post("/forgot_otp", response_model= schemas.CommonResponseModel)
-def forgot_otp(request_data : schemas.SendOtpRequestModel, db: Session = Depends(get_db)):
+@router.post("/forgot_password", response_model= schemas.CommonResponseModel)
+def forgot_password(request_data : schemas.SendOtpRequestModel, db: Session = Depends(get_db)):
 
     if not request_data.phone_number or not utils.is_phone_number(request_data.phone_number):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Please enter valid phone number")
