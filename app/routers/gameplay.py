@@ -400,7 +400,7 @@ async def get_game_history(game_type: int = 1, page: int = 1, search: Optional[s
 
 
 
-@router.get('/get_my_game_bids_history', response_model=schemas.MyBidHistoryResponseModel)
+@router.get('/get_my_game_bids_history')
 async def get_game_bids_history(game_type: int = 1, page: int = 1, search: Optional[str] = "", db: Session = Depends(get_db), current_user : models.User = Depends(oauth2.get_current_user)):
     if game_type < 1 or game_type > 4:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid game type")
