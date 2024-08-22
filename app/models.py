@@ -106,7 +106,7 @@ class UserBids(Base):
     game_id = Column(Integer, ForeignKey('game_logs.id', ondelete="CASCADE"), nullable=False)
     bid_number = Column(Integer, nullable=True, index=True)
     bid_color = Column(Enum(BidColorOptions), nullable=True, index=True)
-    bid_size = Column(Enum(BidSizeOptions), nullable=True, index=True),
+    bid_size = Column(Enum(BidSizeOptions), nullable=True, index=True)
     win_amount = Column(Integer, nullable=True)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=TextClause("Now()"))
     
