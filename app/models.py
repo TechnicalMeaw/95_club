@@ -151,6 +151,16 @@ class Feedback(Base):
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=TextClause("Now()"))
 
 
+class AppPreferences(Base):
+    __tablename__ = "app_preferences"
+    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    key = Column(String, nullable=False)
+    version_str = Column(String, nullable=False)
+    latest_version = Column(Integer, nullable=False)
+    min_supported_version = Column(Integer, nullable=False)
+
+
+
 # class OTPs(Base):
 #     __tablename__ = "otps"
 #     user_email = Column(String, nullable = False, primary_key = True, unique= True)

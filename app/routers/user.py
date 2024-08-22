@@ -4,7 +4,7 @@ from ..database import get_db
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from sqlalchemy.sql.expression import cast
-from sqlalchemy import String
+from sqlalchemy import String, func
 
 router = APIRouter(
     prefix= "/users",
@@ -104,7 +104,15 @@ def get_current_user(db: Session = Depends(get_db), current_user : models.User =
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail= "User does not exist")
     
-    return user
+    total_ammount_added = db.query(func.sum(models.Transactions.amount)).filter(models.Transactions.user_id == current_user.id, models.Transactions.is_added == True).scalar() or 0
+    total_commission_added = db.query(func.sum(models.Transactions.commission)).filter(models.Transactions.user_id == current_user.id, models.Transactions.is_added == True).scalar() or 0
+
+    data = {
+        "is_refferal_enabled" : total_ammount_added + total_commission_added >= 100,
+        **user.__dict__
+    }
+
+    return data
 
 
 # @router.get("/{id}", response_model= schemas.UserOut)

@@ -40,6 +40,7 @@ class OTPResponseModel(BaseModel):
 
 class UserOutWithRefferal(UserOut):
     refferal : str
+    is_refferal_enabled : bool
 
     class Config:
         from_attributes = True
@@ -438,6 +439,20 @@ class BidHistoryResponse(BaseModel):
     bid_size : str | None
     win_amount : int | None
     created_at : datetime
+    class Config:
+        from_attributes = True
 
 class MyBidHistoryResponseModel(CommonResponseModel, PaginationResponseModel):
     data: List[BidHistoryResponse]
+
+
+# Version Details
+class AppInfoResponse(BaseModel):
+    version_str : str
+    latest_version : int
+    min_supported_version : int
+    class Config:
+        from_attributes = True
+
+class AppInfoResponseModel(CommonResponseModel):
+    data : AppInfoResponse
