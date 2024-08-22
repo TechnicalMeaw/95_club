@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from . import models
 from .database import engine
-from .routers import user, auth, gameplay, coins, transactions, webpage
+from .routers import user, auth, gameplay, coins, transactions, webpage, app_pref
 # lottery, withdraw, refferals, horse_race, lucky_draw, notice_board, jhandi_munda
 
 
@@ -15,6 +15,8 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Webpage
 app.include_router(webpage.router)
+
+app.include_router(app_pref.router)
 
 app.include_router(user.router)
 app.include_router(auth.router)
