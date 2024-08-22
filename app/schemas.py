@@ -435,8 +435,8 @@ class BidHistoryResponse(BaseModel):
     game_coin_price : int
     game_id : int
     bid_number : int | None
-    bid_color : str | None
-    bid_size : str | None
+    bid_color : models.BidColorOptions | None
+    bid_size : models.BidSizeOptions | None
     win_amount : int | None
     created_at : datetime
     class Config:
