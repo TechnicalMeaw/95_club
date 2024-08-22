@@ -45,8 +45,8 @@ class Refferals(Base):
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     refferal_user_id = Column(Integer)
     reffered_user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
-    amount = Column(Integer, nullable = False, server_default = TextClause("10"))
-    is_success = Column(Boolean, nullable = False, server_default = TextClause("True"))
+    amount = Column(Integer, nullable = False, server_default = TextClause("50"))
+    is_success = Column(Boolean, nullable = False, server_default = TextClause("False"))
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=TextClause("Now()"))
 
     user = relationship("User")
@@ -106,7 +106,8 @@ class UserBids(Base):
     game_id = Column(Integer, ForeignKey('game_logs.id', ondelete="CASCADE"), nullable=False)
     bid_number = Column(Integer, nullable=True, index=True)
     bid_color = Column(Enum(BidColorOptions), nullable=True, index=True)
-    bid_size = Column(Enum(BidSizeOptions), nullable=True, index=True)
+    bid_size = Column(Enum(BidSizeOptions), nullable=True, index=True),
+    win_amount = Column(Integer, nullable=True)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=TextClause("Now()"))
     
 
@@ -126,6 +127,7 @@ class Transactions(Base):
     __tablename__ = "transactions"
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     amount = Column(Integer, nullable=False)
+    commission = Column(Integer, nullable=False, server_default = TextClause("0"))
     user_id = Column(Integer, ForeignKey("users.id"), nullable = False)
     transction_id = Column(String, nullable=True, unique=True)
     is_added = Column(Boolean, nullable  = False, server_default = TextClause("True"))

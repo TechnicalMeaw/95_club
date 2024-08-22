@@ -17,7 +17,10 @@ def deposit(transaction_data : schemas.TransactionRequest, db: Session = Depends
     if prev_transaction_on_same_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Transaction id already exists")
     
-    new_transaction = models.Transactions(user_id = current_user.id, **transaction_data.__dict__)
+    commission = int(transaction_data.amount * 0.02)
+    transaction_data.amount -= commission
+
+    new_transaction = models.Transactions(user_id = current_user.id, commission = commission, **transaction_data.__dict__)
     db.add(new_transaction)
     db.commit()
 
@@ -32,7 +35,7 @@ def withdraw(withdraw_data : schemas.WithdrawRequestModel, db: Session = Depends
     if not coin_balance:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Coin Balance is not enough")
     
-    if int(coin_balance.num_of_coins) < withdraw_data.amount:
+    if int(coin_balance.num_of_coins) < withdraw_data.amount or int(coin_balance.num_of_coins) < 230:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Coin Balance is not enough")
     
     if not withdraw_data.upi_id and not withdraw_data.account_number and not withdraw_data.ifsc_code and not withdraw_data.account_holder_name:
@@ -96,6 +99,31 @@ def verify_transaction(verification_data: schemas.VerifyTransactionRequest, db: 
                 new_coins_row = models.Coins(**new_coin_balance.__dict__)
                 new_coins_row.user_id = transaction.user_id
                 db.add(new_coins_row)
+
+                # On first time money added 
+                # more than or equal to rs. 100
+                # Check for refferal bonus
+                refferal_entry = db.query(models.Refferals).filter(models.Refferals.reffered_user_id == verification_data.user_id).first()
+                if refferal_entry and (transaction.amount + transaction.commission) >= 100 and not refferal_entry.is_success:
+
+                    # Get reffered user's coin balance and
+                    # Add 50 rs
+                    new_coin_balance.num_of_coins += 50
+
+                    # Get refferal user's coin balance and
+                    # Add 100 rs
+                    refferal_user_coin_balance = db.query(models.Coins).filter(models.Coins.user_id == refferal_entry.refferal_user_id).first()
+
+                    if not refferal_user_coin_balance:
+                        refferal_user_new_coin_balance = schemas.CoinResponse(num_of_coins=50, coin_type=1)
+                        new_refferal_coins_row = models.Coins(**refferal_user_new_coin_balance.__dict__)
+                        new_refferal_coins_row.user_id = refferal_entry.refferal_user_id
+                        db.add(new_refferal_coins_row)
+                    else:
+                        refferal_user_coin_balance.num_of_coins += 100
+
+                    refferal_entry.is_success = True
+
                 db.commit()
                 return new_coin_balance
         
@@ -117,11 +145,11 @@ def verify_transaction(verification_data: schemas.VerifyTransactionRequest, db: 
         db.commit()
 
         # Get coin balance
-        new_coin_balance = schemas.CoinResponse(num_of_coins=transaction.amount, coin_type=1)
-        new_coins_row = models.Coins(**new_coin_balance.__dict__)
-        new_coins_row.user_id = transaction.user_id
+        # new_coin_balance = schemas.CoinResponse(num_of_coins=user_coin_balance.num_of_coins, coin_type=1)
+        # new_coins_row = models.Coins(**new_coin_balance.__dict__)
+        # new_coins_row.user_id = transaction.user_id
 
-        return new_coin_balance
+        return user_coin_balance
 
     
 @router.get("/all_transactions", response_model=schemas.AllTransactionsResponseModel)

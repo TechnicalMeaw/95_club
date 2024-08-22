@@ -181,6 +181,14 @@ async def get_result(game_id : int, db: Session = Depends(get_db), current_user 
         if existing_user_game_log:
             existing_user_game_log.win_coin_value = user_reward
 
+        # Calculate result for each bid and save in db
+        all_user_bids = db.query(models.UserBids).filter(models.UserBids.user_id == current_user.id, models.UserBids.game_id == game.id).all()
+
+        for bid in all_user_bids:
+            bid.win_amount = ((bid.game_coin_price if bid.bid_number == game.result_number else 0) * 9) + \
+                ((bid.game_coin_price if bid.bid_color == game.result_color else 0)  * 2) + \
+                ((bid.game_coin_price if bid.bid_size == game.result_size else 0) * 2)
+
         db.commit()
 
         return {"result_number" : game.result_number,
@@ -241,6 +249,15 @@ async def get_result(game_id : int, db: Session = Depends(get_db), current_user 
     existing_user_game_log = db.query(models.UserGameLogs).filter(models.UserGameLogs.game_id == game.id, models.UserGameLogs.user_id == current_user.id).first()
     if existing_user_game_log:
         existing_user_game_log.win_coin_value = user_reward
+
+    # Calculate result for each bid and save in db
+    all_user_bids = db.query(models.UserBids).filter(models.UserBids.user_id == current_user.id, models.UserBids.game_id == game.id).all()
+
+    for bid in all_user_bids:
+        bid.win_amount = ((bid.game_coin_price if bid.bid_number == result_number else 0) * 9) + \
+                ((bid.game_coin_price if bid.bid_color == result_color else 0)  * 2) + \
+                ((bid.game_coin_price if bid.bid_size == result_size else 0) * 2)
+
 
     db.commit()
 
@@ -383,6 +400,33 @@ async def get_game_history(game_type: int = 1, page: int = 1, search: Optional[s
 
 
 
+@router.get('/get_my_game_bids_history', response_model=schemas.MyBidHistoryResponseModel)
+async def get_game_bids_history(game_type: int = 1, page: int = 1, search: Optional[str] = "", db: Session = Depends(get_db), current_user : models.User = Depends(oauth2.get_current_user)):
+    if game_type < 1 or game_type > 4:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid game type")
+
+    history_query = db.query(models.UserBids).join(models.GameLogs).where(models.UserBids.game_id == models.GameLogs.id).filter(
+        models.UserBids.user_id == current_user.id
+        ).filter(
+            models.GameLogs.game_type == game_type, models.GameLogs.is_finished == True
+        ).filter(
+            cast(models.GameLogs.id, String).contains(search)
+            ).order_by(models.UserBids.created_at.desc())
+    
+    total_count = history_query.count()
+    total_page = math.ceil(total_count/10)
+    history_data = history_query.limit(10).offset((page-1)*10).all()
+
+    return {"status": "success", "statusCode": 200, "message" : "Successfully got my game history", 
+            "total_count": total_count,
+            "current_page": page,
+            "total_page": total_page,
+            "prev_page": page-1 if page > 1 else None, 
+            "next_page": page+1 if page < total_page else None,
+            "data" : history_data}
+
+
+
 @router.get('/error_correction_and_calculate')
 async def error_correction_and_calculate(db: Session = Depends(get_db)):
 
@@ -432,6 +476,15 @@ async def error_correction_and_calculate(db: Session = Depends(get_db)):
 
             # Save in user game history
             user_game_log.win_coin_value = user_reward
+
+            # Calculate result for each bid and save in db
+            all_user_bids = db.query(models.UserBids).filter(models.UserBids.user_id == user_game_log.user_id, models.UserBids.game_id == game.id).all()
+
+            for bid in all_user_bids:
+                bid.win_amount = ((bid.game_coin_price if bid.bid_number == game.result_number else 0) * 9) + \
+                    ((bid.game_coin_price if bid.bid_color == game.result_color else 0)  * 2) + \
+                    ((bid.game_coin_price if bid.bid_size == game.result_size else 0) * 2)
+
 
             db.commit()
 

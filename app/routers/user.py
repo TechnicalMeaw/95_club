@@ -52,30 +52,31 @@ async def create_user(user : schemas.UserCreate, db: Session = Depends(get_db), 
     db.refresh(new_user)
 
     # TODO ("Remove later on production")
-    initial_coin_balance = models.Coins(user_id = new_user.id, num_of_coins = 1000)
-    db.add(initial_coin_balance)
-    db.commit()
+    # initial_coin_balance = models.Coins(user_id = new_user.id, num_of_coins = 0)
+    # db.add(initial_coin_balance)
+    # db.commit()
 
     if user.refferal != None and len(user.refferal) > 1:
         refferal_user = db.query(models.User).filter(models.User.refferal == user.refferal).first()
         
         if refferal_user:
 
-            # Update coin balance
-            coin_balance_query = db.query(models.Coins).filter(models.Coins.user_id == refferal_user.id)
+            # # Update coin balance
+            # coin_balance_query = db.query(models.Coins).filter(models.Coins.user_id == refferal_user.id)
 
-            user_coin_balance = coin_balance_query.first()
+            # user_coin_balance = coin_balance_query.first()
 
-            if not user_coin_balance:
-                new_coin_balance = schemas.CoinResponse(num_of_coins=10, coin_type=1)
-                new_coins_row = models.Coins(**new_coin_balance.dict())
-                new_coins_row.user_id = refferal_user.id
-                db.add(new_coins_row)            
+            # if not user_coin_balance:
+            #     new_coin_balance = schemas.CoinResponse(num_of_coins=10, coin_type=1)
+            #     new_coins_row = models.Coins(**new_coin_balance.dict())
+            #     new_coins_row.user_id = refferal_user.id
+            #     db.add(new_coins_row)            
 
-            user_coin_balance.num_of_coins += 10
+            # user_coin_balance.num_of_coins += 10
 
             # Update new entry to refferal table
-            new_refferal_entry = models.Refferals(refferal_user_id = refferal_user.id, reffered_user_id = new_user.id, amount = 10)
+            # Just adding the user to refferal
+            new_refferal_entry = models.Refferals(refferal_user_id = refferal_user.id, reffered_user_id = new_user.id, amount = 0)
             db.add(new_refferal_entry)
             db.commit()
 

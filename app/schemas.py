@@ -426,3 +426,18 @@ class FeedbackRequestModel(BaseModel):
     name : str
     mobile_number : str
     concern : str
+
+
+
+# Bid History
+class BidHistoryResponse(BaseModel):
+    game_coin_price : int
+    game_id : int
+    bid_number : int | None
+    bid_color : str | None
+    bid_size : str | None
+    win_amount : int | None
+    created_at : datetime
+
+class MyBidHistoryResponseModel(CommonResponseModel, PaginationResponseModel):
+    data: List[BidHistoryResponse]
