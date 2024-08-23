@@ -188,9 +188,9 @@ def get_random_number():
         if abs(new_value - last_value) > 30:
             difference = random.randint(3, 30)
             if new_value > last_value:
-                new_value = min(last_value + difference, high)
+                new_value = last_value + difference
             else:
-                new_value = max(last_value - difference, low)
+                new_value = last_value - difference
 
     # Update the last generated value and timestamp
     last_value = new_value
