@@ -185,8 +185,8 @@ def get_random_number():
 
     # Ensure the new value does not differ by more than a random value between 3 and 40 from the last value
     if last_value is not None:
-        if abs(new_value - last_value) > 60:
-            difference = random.randint(3, 60)
+        if abs(new_value - last_value) > 30:
+            difference = random.randint(3, 30)
             if new_value > last_value:
                 new_value = min(last_value + difference, high)
             else:
