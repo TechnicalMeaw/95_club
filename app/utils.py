@@ -5,7 +5,7 @@ from passlib.context import CryptContext
 from datetime import datetime
 from sqlalchemy.orm import Session
 from . import models
-from datetime import time
+# from datetime import time
 import re
 
 
@@ -136,3 +136,64 @@ def generate_unique_referral_code(unique_attribute: str):
     referral_code = base64_str[:8]
     
     return referral_code[0:7:] + referral_code[7::].replace('-', '0')
+
+
+import random
+import time
+# from datetime import datetime
+
+# Global variables to store the last generated value and its timestamp
+last_value = None
+last_time = None
+
+def get_random_number():
+    global last_value, last_time
+
+    # Get the current time
+    now = datetime.now()
+
+    # Define the time ranges and corresponding number ranges
+    time_ranges = [
+        ((8, 0), (10, 0), 850, 1050),
+        ((10, 0), (12, 0), 1100, 1450),
+        ((12, 0), (14, 0), 1100, 1560),
+        ((14, 0), (16, 0), 1300, 1750),
+        ((16, 0), (18, 0), 1400, 1800),
+        ((18, 0), (22, 0), 1600, 2100),
+        ((22, 0), (0, 0), 1450, 1850),
+        ((0, 0), (8, 0), 1350, 2450)
+    ]
+
+    # Find the appropriate range based on the current time
+    for start_time, end_time, low, high in time_ranges:
+        start_hour, start_minute = start_time
+        end_hour, end_minute = end_time
+
+        if start_hour <= now.hour < end_hour or \
+           (start_hour <= now.hour < 24 and end_hour == 0):
+            if end_hour == 0 and now.hour == 23:
+                continue
+            break
+
+    # Calculate the time difference from the last generated value
+    current_time = time.time()
+    if last_time is not None and (current_time - last_time) <= 10:
+        return last_value
+
+    # Generate a new random number within the specified range
+    new_value = random.randint(low, high)
+
+    # Ensure the new value does not differ by more than a random value between 3 and 40 from the last value
+    if last_value is not None:
+        if abs(new_value - last_value) > 60:
+            difference = random.randint(3, 60)
+            if new_value > last_value:
+                new_value = min(last_value + difference, high)
+            else:
+                new_value = max(last_value - difference, low)
+
+    # Update the last generated value and timestamp
+    last_value = new_value
+    last_time = current_time
+
+    return new_value

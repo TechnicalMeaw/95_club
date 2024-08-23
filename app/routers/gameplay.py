@@ -1,5 +1,7 @@
 import math
 from fastapi import status, HTTPException, Depends, APIRouter
+
+from app import utils
 from .. import models, schemas, oauth2
 from ..database import get_db
 from sqlalchemy.orm import Session
@@ -105,6 +107,8 @@ async def get_game_info(game_type : int, db: Session = Depends(get_db)):
         game_time_in_seconds = 180
     else:
         game_time_in_seconds = 300
+
+    players_online = utils.get_random_number()
     
     latest_game = db.query(models.GameLogs).filter(models.GameLogs.game_type == game_type).order_by(models.GameLogs.created_at.desc()).first()
 
@@ -115,7 +119,7 @@ async def get_game_info(game_type : int, db: Session = Depends(get_db)):
         db.add(new_game)
         db.commit()
         db.refresh(new_game)
-        return {"time_remaining" : game_time_in_seconds, "game_id" : new_game.id}
+        return {"time_remaining" : game_time_in_seconds, "game_id" : new_game.id, "players_online" : players_online}
     
     latest_game_naive = latest_game.created_at.replace(tzinfo=None)
     time_differnce = datetime.now() - latest_game_naive
@@ -127,7 +131,7 @@ async def get_game_info(game_type : int, db: Session = Depends(get_db)):
         db.add(new_game)
         db.commit()
         db.refresh(new_game)
-        return {"time_remaining" : game_time_in_seconds, "game_id" : new_game.id}
+        return {"time_remaining" : game_time_in_seconds, "game_id" : new_game.id, "players_online" : players_online}
     # Time exceeded but result not calculated
     elif time_differnce.total_seconds() >= game_time_in_seconds:
         # Calculate game result
@@ -146,9 +150,9 @@ async def get_game_info(game_type : int, db: Session = Depends(get_db)):
         db.add(new_game)
         db.commit()
         db.refresh(new_game)
-        return {"time_remaining" : game_time_in_seconds, "game_id" : new_game.id}
+        return {"time_remaining" : game_time_in_seconds, "game_id" : new_game.id, "players_online" : players_online}
     else:
-        return {"time_remaining" : game_time_in_seconds - time_differnce.total_seconds(), "game_id" : latest_game.id}
+        return {"time_remaining" : game_time_in_seconds - time_differnce.total_seconds(), "game_id" : latest_game.id, "players_online" : players_online}
     
 
         
