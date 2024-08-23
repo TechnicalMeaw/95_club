@@ -107,8 +107,6 @@ async def get_game_info(game_type : int, db: Session = Depends(get_db)):
         game_time_in_seconds = 180
     else:
         game_time_in_seconds = 300
-
-    players_online = utils.get_random_number()
     
     latest_game = db.query(models.GameLogs).filter(models.GameLogs.game_type == game_type).order_by(models.GameLogs.created_at.desc()).first()
 
@@ -119,7 +117,7 @@ async def get_game_info(game_type : int, db: Session = Depends(get_db)):
         db.add(new_game)
         db.commit()
         db.refresh(new_game)
-        return {"time_remaining" : game_time_in_seconds, "game_id" : new_game.id, "players_online" : players_online}
+        return {"time_remaining" : game_time_in_seconds, "game_id" : new_game.id}
     
     latest_game_naive = latest_game.created_at.replace(tzinfo=None)
     time_differnce = datetime.now() - latest_game_naive
@@ -131,7 +129,7 @@ async def get_game_info(game_type : int, db: Session = Depends(get_db)):
         db.add(new_game)
         db.commit()
         db.refresh(new_game)
-        return {"time_remaining" : game_time_in_seconds, "game_id" : new_game.id, "players_online" : players_online}
+        return {"time_remaining" : game_time_in_seconds, "game_id" : new_game.id}
     # Time exceeded but result not calculated
     elif time_differnce.total_seconds() >= game_time_in_seconds:
         # Calculate game result
@@ -150,10 +148,15 @@ async def get_game_info(game_type : int, db: Session = Depends(get_db)):
         db.add(new_game)
         db.commit()
         db.refresh(new_game)
-        return {"time_remaining" : game_time_in_seconds, "game_id" : new_game.id, "players_online" : players_online}
+        return {"time_remaining" : game_time_in_seconds, "game_id" : new_game.id}
     else:
-        return {"time_remaining" : game_time_in_seconds - time_differnce.total_seconds(), "game_id" : latest_game.id, "players_online" : players_online}
+        return {"time_remaining" : game_time_in_seconds - time_differnce.total_seconds(), "game_id" : latest_game.id}
     
+
+@router.get("/get_player_stats")
+async def get_player_stats():
+    players_online = utils.get_random_number()
+    return {"status": "success", "statusCode": 200, "message" : "Successfully got player stats", "data" : players_online}
 
         
 @router.get('/get_result')

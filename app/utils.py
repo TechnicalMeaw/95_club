@@ -177,7 +177,7 @@ def get_random_number():
 
     # Calculate the time difference from the last generated value
     current_time = time.time()
-    if last_time is not None and (current_time - last_time) <= 10:
+    if last_time is not None and (current_time - last_time) <= 5:
         return last_value
 
     # Generate a new random number within the specified range
