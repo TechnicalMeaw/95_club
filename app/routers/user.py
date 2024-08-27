@@ -16,22 +16,22 @@ router = APIRouter(
                         status.HTTP_403_FORBIDDEN : {"model": schemas.HTTPError,"description": "If user already exists"}})
 async def create_user(user : schemas.UserCreate, db: Session = Depends(get_db), current_temp_user : models.TempUsers = Depends(oauth2.get_current_temp_user)):
 
-    if current_temp_user.phone_number != user.phone_no:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid phone number")
+    if current_temp_user.username != user.email or not utils.is_email(user.email):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid email")
     
-    if user.email and not utils.is_email(user.email):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid email id")
+    if user.phone_no and not utils.is_phone_number(user.phone_no):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid phone number")
     
     country_code, number = utils.split_phone_number(user.phone_no)
 
     # Check if user already exists
-    existing_phone_no = db.query(models.User).filter(models.User.phone_no == number, models.User.country_code == country_code).first()
+    existing_email = db.query(models.User).filter(models.User.email == user.email).first()
 
-    if existing_phone_no:
+    if existing_email:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User already exists")
 
-    if not country_code or not number:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid phone number")
+    # if not country_code or not number:
+    #     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid phone number")
 
     # hash the password
     hashed_password = utils.hash(user.password)

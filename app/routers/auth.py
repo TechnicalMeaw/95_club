@@ -12,7 +12,7 @@ router = APIRouter(tags=["Authentication"])
 
 @router.post("/login", response_model= schemas.Token)
 def login(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.phone_no == user_credentials.username).first()
+    user = db.query(models.User).filter(models.User.email == user_credentials.username, models.User.is_deleted == False).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid Credentials")
     
@@ -88,21 +88,34 @@ def login(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session =
 
 
 @router.post("/send_otp")
-def send_otp(request_data : schemas.SendOtpRequestModel, db: Session = Depends(get_db)):
+async def send_otp(request_data : schemas.SendOtpRequestModel, db: Session = Depends(get_db)):
 
-    if not request_data.phone_number or not utils.is_phone_number(request_data.phone_number):
+    if not request_data.user_name or not (utils.is_phone_number(request_data.user_name) or utils.is_email(request_data.user_name)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Please enter valid phone number")
     
-    _, number = utils.split_phone_number(request_data.phone_number)
-
     otp_generated = otp_util.generate_otp()
-    is_otp_sent = otp_util.send_voice_otp(otp_generated, number)
-        
-    if not is_otp_sent:
-        raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail="There are some problems sending OTP, please try again in some time.")
 
-    new_otp = models.OTP(otp=str(otp_generated), username=request_data.phone_number, otp_type='sms')
-    db.add(new_otp)
+    if utils.is_phone_number(request_data.user_name):
+        _, number = utils.split_phone_number(request_data.user_name)
+
+        is_otp_sent = otp_util.send_voice_otp(otp_generated, number)
+            
+        if not is_otp_sent:
+            raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail="There are some problems sending OTP, please try again in some time.")
+
+        new_otp = models.OTP(otp=str(otp_generated), username=request_data.user_name, otp_type='sms')
+        db.add(new_otp)
+
+    elif utils.is_email(request_data.user_name):
+        try:
+            await otp_util.send_email_otp([request_data.user_name], otp_generated)
+        except Exception as e:
+                print(e)
+                raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail="There are some problems sending OTP, please try again in some time.")
+
+        new_otp = models.OTP(otp=str(otp_generated), username=request_data.user_name, otp_type='email')
+        db.add(new_otp)
+
     db.commit()
 
     return {"status": "success", "statusCode": 200, "message" : "OTP sent"}
@@ -110,7 +123,7 @@ def send_otp(request_data : schemas.SendOtpRequestModel, db: Session = Depends(g
 
 @router.post("/verify_otp", response_model= schemas.Token)
 def verify_otp(verify_request: schemas.VerifyOTPRequestModel, db: Session = Depends(get_db)):
-    existing_otp = db.query(models.OTP).filter(models.OTP.username == verify_request.phone_number, models.OTP.created_at >= datetime.utcnow() - timedelta(minutes=5)).order_by(models.OTP.created_at.desc()).first()
+    existing_otp = db.query(models.OTP).filter(models.OTP.username == verify_request.username, models.OTP.created_at >= datetime.utcnow() - timedelta(minutes=5)).order_by(models.OTP.created_at.desc()).first()
     print(existing_otp)
     if not existing_otp or existing_otp.is_used:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You've entered an invalid OTP.")
@@ -123,47 +136,47 @@ def verify_otp(verify_request: schemas.VerifyOTPRequestModel, db: Session = Depe
     db.commit()
 
     # Check if account already exists
-    if utils.is_phone_number(verify_request.phone_number):
-        existing_user = db.query(models.User).filter(models.User.phone_no == verify_request.phone_number, models.User.is_deleted==False).first()
+    if utils.is_email(verify_request.username):
+        existing_user = db.query(models.User).filter(models.User.email == verify_request.username, models.User.is_deleted==False).first()
         if existing_user:
             new_token = oauth2.create_access_token(data=existing_user.id)
             return {"token": new_token, "existing_user" : True, "login_flow_completed": True}
         
         else:
-            existing_temp_user = db.query(models.TempUsers).filter(models.TempUsers.phone_number == verify_request.phone_number).first()
+            existing_temp_user = db.query(models.TempUsers).filter(models.TempUsers.username == verify_request.username).first()
             if existing_temp_user:
                 new_token = oauth2.create_access_token(data=existing_temp_user.id)
                 return {"token": new_token, "existing_user" : True, "login_flow_completed": False}
             else:
-                new_temp_user = models.TempUsers(phone_number = verify_request.phone_number)
+                new_temp_user = models.TempUsers(username = verify_request.username)
                 db.add(new_temp_user)
                 db.commit()
                 new_token = oauth2.create_access_token(data=new_temp_user.id)
                 return {"token": new_token, "existing_user" : False, "login_flow_completed": False}
     else:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid phone number")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid email")
 
 
 
 @router.post("/forgot_password", response_model= schemas.CommonResponseModel)
-def forgot_password(request_data : schemas.SendOtpRequestModel, db: Session = Depends(get_db)):
+async def forgot_password(request_data : schemas.SendOtpRequestModel, db: Session = Depends(get_db)):
 
-    if not request_data.phone_number or not utils.is_phone_number(request_data.phone_number):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Please enter valid phone number")
+    if not request_data.user_name or not utils.is_email(request_data.user_name):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Please enter valid email")
     
-    country_code, number = utils.split_phone_number(request_data.phone_number)
+    # country_code, number = utils.split_phone_number(request_data.user_name)
 
-    user = db.query(models.User).filter(models.User.country_code == country_code, models.User.phone_no == number, models.User.is_deleted == False).first()
+    user = db.query(models.User).filter(models.User.email == request_data.user_name, models.User.is_deleted == False).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     otp_generated = otp_util.generate_otp()
-    is_otp_sent = otp_util.send_voice_otp(otp_generated, number)
-        
-    if not is_otp_sent:
+    try:
+        await otp_util.send_email_otp(user.email, otp_generated)
+    except Exception:
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail="There are some problems sending OTP, please try again in some time.")
 
-    new_otp = models.OTP(otp=str(otp_generated), username=request_data.phone_number, otp_type='sms')
+    new_otp = models.OTP(otp=str(otp_generated), username=request_data.user_name, otp_type='email')
     db.add(new_otp)
     db.commit()
 
@@ -172,7 +185,7 @@ def forgot_password(request_data : schemas.SendOtpRequestModel, db: Session = De
 
 @router.post("/reset_password", response_model= schemas.Token)
 def reset_password(request_data : schemas.ResetPasswordRequestModel,  db: Session = Depends(get_db)):
-    existing_otp = db.query(models.OTP).filter(models.OTP.username == request_data.phone_number, models.OTP.created_at >= datetime.utcnow() - timedelta(minutes=5)).order_by(models.OTP.created_at.desc()).first()
+    existing_otp = db.query(models.OTP).filter(models.OTP.username == request_data.username, models.OTP.created_at >= datetime.utcnow() - timedelta(minutes=5)).order_by(models.OTP.created_at.desc()).first()
     print(existing_otp)
     if not existing_otp or existing_otp.is_used:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You've entered an invalid OTP.")
@@ -184,12 +197,12 @@ def reset_password(request_data : schemas.ResetPasswordRequestModel,  db: Sessio
     existing_otp.is_used = True
     db.commit()
 
-    if not request_data.phone_number or not utils.is_phone_number(request_data.phone_number):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Please enter valid phone number")
-    country_code, number = utils.split_phone_number(request_data.phone_number)
+    if not request_data.username or not utils.is_email(request_data.username):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Please enter valid email")
+    # country_code, number = utils.split_phone_number(request_data.phone_number)
 
     # Check if account already exists
-    user = db.query(models.User).filter(models.User.country_code == country_code, models.User.phone_no == number, models.User.is_deleted == False).first()
+    user = db.query(models.User).filter(models.User.email == request_data.username, models.User.is_deleted == False).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     

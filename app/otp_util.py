@@ -1,5 +1,5 @@
 # from fastapi import FastAPI
-# from fastapi_mail import FastMail, MessageSchema,ConnectionConfig
+from fastapi_mail import FastMail, MessageSchema,ConnectionConfig
 # from starlette.requests import Request
 # from starlette.responses import JSONResponse
 # from pydantic import EmailStr, BaseModel
@@ -19,40 +19,81 @@ def send_voice_otp(otp: int, phone: str):
     return res['return'] == True
 
 
-# conf = ConnectionConfig(
-#     MAIL_USERNAME="Ja.adam192@gmail.com",
-#     MAIL_PASSWORD="avhxhxwpiyosmjij",
-#     MAIL_FROM = "Ja.adam192@gmail.com",
-#     MAIL_PORT=465,
-#     MAIL_SERVER="smtp.gmail.com",
-#     MAIL_STARTTLS = False,
-#     MAIL_SSL_TLS = True,
-#     USE_CREDENTIALS = True
+conf = ConnectionConfig(
+    MAIL_USERNAME=settings.mail_username,
+    MAIL_PASSWORD=settings.mail_password,
+    MAIL_FROM = settings.mail_from,
+    MAIL_PORT=settings.mail_port,
+    MAIL_SERVER=settings.mail_server,
+    MAIL_STARTTLS = True,
+    MAIL_SSL_TLS = False,
+    USE_CREDENTIALS = True,
+)
+
+
+async def send_email_otp(email, otp: int):
+
+    message = MessageSchema(
+    subject="Your OTP for 95 Club",
+    recipients=email,  # List of recipients
+    body=f'''
+    <div style="font-family: Helvetica, Arial, sans-serif; width: 100%; overflow: auto; line-height: 1.8; color: #333;">
+        <div style="margin: 40px auto; width: 70%; padding: 20px; background-color: #f9f9f9; border-radius: 10px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);">
+            <div style="border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                <a href="" style="font-size: 1.6em; color: #ff6600; text-decoration: none; font-weight: 700;">95 Club</a>
+            </div>
+            <p style="font-size: 1.2em; margin-top: 20px;">Hi,</p>
+            <p style="font-size: 1.1em;">Thank you for joining 95 Club! Use the following OTP to complete your sign-up process. The OTP is valid for 5 minutes.</p>
+            <div style="text-align: center;">
+                <h2 style="background: #ff6600; display: inline-block; margin: 20px 0; padding: 10px 20px; color: #fff; border-radius: 5px;">{otp}</h2>
+            </div>
+            <p style="font-size: 1em;">Regards,<br />95 Club Team</p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+            <div style="color: #aaa; font-size: 0.9em; line-height: 1.2; font-weight: 300;">
+                <p>95 Club</p>
+                <p>Your gateway to earning money.</p>
+            </div>
+        </div>
+    </div>
+    ''',
+    subtype="html"
+    )
+
+
+
+    fm = FastMail(conf)
+    await fm.send_message(message)
+
+# import boto3
+# from botocore.exceptions import NoCredentialsError, ClientError
+
+# # Set up your AWS credentials
+# ses_client = boto3.client(
+#     'ses',
+#     region_name='ap-south-1',  # e.g., 'us-east-1'
+#     aws_access_key_id='your-access-key-id',
+#     aws_secret_access_key='your-secret-access-key'
 # )
 
-
-# async def sendOTP(email, otp: int):
-
-#     message = MessageSchema(
-#         subject="Your OTP",
-#         recipients=email,  # List of recipients, as many as you can pass  
-#         body='<div style="font-family: Helvetica,Arial,sans-serif;min-width:1000px;overflow:auto;line-height:2">'+
-#             '<div style="margin:50px auto;width:70%;padding:20px 0">'+
-#                 '<div style="border-bottom:1px solid #eee">'+
-#                 '<a href="" style="font-size:1.4em;color: #00466a;text-decoration:none;font-weight:600">Real Teenpatti</a>'+
-#                 '</div>'+
-#                 '<p style="font-size:1.1em">Hi,</p>'+
-#                 '<p>Thank you for choosing Real Teenpatti. Use the following OTP to complete your Sign Up procedures. OTP is valid for 5 minutes</p>'+
-#                 f'<h2 style="background: #00466a;margin: 0 auto;width: max-content;padding: 0 10px;color: #fff;border-radius: 4px;">{otp}</h2>'+
-#                 '<p style="font-size:0.9em;">Regards,<br />Real Teenpatti</p>'+
-#                 '<hr style="border:none;border-top:1px solid #eee" />'+
-#                 '<div style="float:right;padding:8px 0;color:#aaa;font-size:0.8em;line-height:1;font-weight:300">'+
-#                 '<p>Real Teenpatti</p>'+
-#                 '</div>'+
-#             '</div>'+
-#             '</div>',
-#         subtype="html"
-#     )
-
-#     fm = FastMail(conf)
-#     await fm.send_message(message)
+# def send_otp_email(recipient_email, otp_code):
+#     try:
+#         response = ses_client.send_email(
+#             Source='your-verified-email@example.com',
+#             Destination={
+#                 'ToAddresses': [recipient_email],
+#             },
+#             Message={
+#                 'Subject': {
+#                     'Data': 'Your OTP Code',
+#                 },
+#                 'Body': {
+#                     'Text': {
+#                         'Data': f'Your OTP code is {otp_code}. It is valid for 10 minutes.',
+#                     },
+#                 },
+#             }
+#         )
+#         return response
+#     except (NoCredentialsError, ClientError) as e:
+#         print(f"Error sending email: {e}")
+#         return None

@@ -14,6 +14,11 @@ class Settings(BaseSettings):
     sms_otp_auth_key: str
     aes_key : str
     iv : str
+    mail_username : str
+    mail_password : str
+    mail_from : str
+    mail_port : int
+    mail_server : str
 
 
     class Config:

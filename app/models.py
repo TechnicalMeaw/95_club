@@ -9,8 +9,8 @@ class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     name = Column(String, nullable = False)
-    phone_no = Column(String, nullable=False, unique=True)
-    email = Column(String, nullable=True)
+    phone_no = Column(String, nullable=True)
+    email = Column(String, nullable=False, unique=True)
     password = Column(String, nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=TextClause("Now()"))
     is_verified = Column(Boolean, nullable = False, server_default = TextClause("True"))
@@ -24,7 +24,7 @@ class User(Base):
 class TempUsers(Base):
     __tablename__ = "temp_users"
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
-    phone_number = Column(String, nullable = False, index=True, unique=True)
+    username = Column(String, nullable = False, index=True, unique=True)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text("Now()"))
     role = Column(Integer, server_default = text("1"))
     verified = Column(Boolean, nullable = False, server_default = text("False"))

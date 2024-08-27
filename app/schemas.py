@@ -7,9 +7,9 @@ from . import models
 # Create User Request Model
 class UserCreate(BaseModel):
     name: str
-    phone_no: str
+    phone_no: Optional[str]
     password: str
-    email : Optional[str]
+    email : str
     refferal : Optional[str]
 
 # User login response model
@@ -25,12 +25,12 @@ class UserOut(BaseModel):
 
 # OTP
 class SendOtpRequestModel(BaseModel):
-    phone_number : str
+    user_name : str
 
 
 class VerifyOTPRequestModel(BaseModel):
     otp: int
-    phone_number: str
+    username: str
     otp_type: Optional[str] = 'voice'
 
 class OTPResponseModel(BaseModel):
@@ -418,7 +418,7 @@ class WithdrawRequestModel(BaseModel):
 # Reset password
 class ResetPasswordRequestModel(BaseModel):
     otp: int
-    phone_number: str
+    username: str
     new_password: str
 
 
