@@ -16,8 +16,8 @@ class UserCreate(BaseModel):
 class UserOut(BaseModel):
     id: int
     name: str
-    phone_no: str
-    email : str | None
+    phone_no: str | None
+    email : str
     created_at : datetime
 
     class Config:
