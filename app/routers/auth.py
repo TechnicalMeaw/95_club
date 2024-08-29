@@ -172,7 +172,7 @@ async def forgot_password(request_data : schemas.SendOtpRequestModel, db: Sessio
 
     otp_generated = otp_util.generate_otp()
     try:
-        await otp_util.send_email_otp(user.email, otp_generated)
+        await otp_util.send_email_otp([user.email], otp_generated)
     except Exception:
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail="There are some problems sending OTP, please try again in some time.")
 
