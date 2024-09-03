@@ -456,3 +456,9 @@ class AppInfoResponse(BaseModel):
 
 class AppInfoResponseModel(CommonResponseModel):
     data : AppInfoResponse
+
+
+# Firebase Oauth2
+class GetAuthToken(BaseModel):
+    uid : str
+    refferal : Optional[str]

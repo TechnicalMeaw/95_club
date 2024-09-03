@@ -3,28 +3,86 @@ from fastapi import status, HTTPException, Depends, APIRouter
 from datetime import datetime, timedelta
 
 # from app.otp_util import generateOtp, sendOTP
-from .. import models, schemas, utils, oauth2, otp_util
+from .. import models, schemas, utils, oauth2, otp_util, easyAes
 from ..database import get_db
+from ..firebase import firebase_auth
 from sqlalchemy.orm import Session
 from fastapi.security.oauth2 import OAuth2PasswordRequestForm
 
 router = APIRouter(tags=["Authentication"])
 
-@router.post("/login", response_model= schemas.Token)
-def login(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.email == user_credentials.username, models.User.is_deleted == False).first()
-    if not user:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid Credentials")
+
+@router.post("/get_token", response_model = schemas.Token)
+def get_user_token(user : schemas.GetAuthToken, db: Session = Depends(get_db)):
+    aes = easyAes.EasyAES()
+    print(user.uid)
+    user.uid = aes.decrypt(user.uid)
+
+    print(user.uid)
+    local_user = db.query(models.User).filter(models.User.firebase_uid == user.uid, models.User.is_deleted==False).first()
+
+    # IF user doesn't exists locally
+    if not local_user:
+        # check if user exists on firebase
+        firebase_user = firebase_auth.get_firebase_user(user.uid)
+
+        if not firebase_user:
+            # if user doesn't exists on firebase
+            raise HTTPException(status_code= status.HTTP_404_NOT_FOUND, detail="User doesn't exists")
+        else:
+            # create local user
+            new_refferal_code = utils.generate_unique_referral_code(firebase_user["_data"]["localId"])
+
+            new_user = models.User(firebase_uid = firebase_user["_data"]["localId"], 
+                                   email = firebase_user["_data"]["email"],
+                                   name = firebase_user["_data"]["displayName"],
+                                   refferal = new_refferal_code
+                                   )
+            db.add(new_user)
+            db.commit()
+            db.refresh(new_user)
+
+            if user.refferal != None and len(user.refferal) > 1:
+                refferal_user = db.query(models.User).filter(models.User.refferal == user.refferal).first()
+                
+                if refferal_user:
+                    new_refferal_entry = models.Refferals(refferal_user_id = refferal_user.id, reffered_user_id = new_user.id, amount = 0)
+                    db.add(new_refferal_entry)
+                    db.commit()
+
+            # create a token
+            access_token = oauth2.create_access_token(data=new_user.id)
+                
+            return {"token": access_token, "existing_user" : True, "login_flow_completed": True}
+
+            # return {"access_token": access_token, "token_type": "bearer", "role": aes.encrypt(str(new_user.role))}
+    else:
+        # update last login
+        local_user.last_login = datetime.now()
+        db.commit()
+        
+        # create a token
+        access_token = oauth2.create_access_token(data=local_user.id)
+        return {"token": access_token, "existing_user" : True, "login_flow_completed": True}
+
+        # return {"access_token": access_token, "token_type": "bearer", "role": aes.encrypt(str(local_user.role))}
+
+
+# @router.post("/login", response_model= schemas.Token)
+# def login(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+#     user = db.query(models.User).filter(models.User.email == user_credentials.username, models.User.is_deleted == False).first()
+#     if not user:
+#         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid Credentials")
     
-    if not utils.verify(user_credentials.password, user.password):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid Credentials")
+#     if not utils.verify(user_credentials.password, user.password):
+#         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid Credentials")
     
-    if not user.is_verified:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="First verify your phone number")
+#     if not user.is_verified:
+#         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="First verify your phone number")
     
-    # create a token
-    access_token = oauth2.create_access_token(data=user.id)
-    return {"token": access_token, "existing_user" : True, "login_flow_completed": True}
+#     # create a token
+#     access_token = oauth2.create_access_token(data=user.id)
+#     return {"token": access_token, "existing_user" : True, "login_flow_completed": True}
 
 
 
