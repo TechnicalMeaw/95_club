@@ -313,7 +313,7 @@ async def bid(body : schemas.GamePlayBidRequestModel, db: Session = Depends(get_
     if int(coin_balance.num_of_coins) < body.bid_amount:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Coin balance is not enough")
     
-    if body.bid_amount < 10:
+    if body.bid_amount < 1:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Bid ammount can't be less than 10")
     
     if body.bid_number:
